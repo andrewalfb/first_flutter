@@ -1,4 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+final _wikipediaSummaryUrl = Uri.parse(
+  'https://en.wikipedia.org/api/rest_v1/page/summary/Flutter_(software)',
+);
 
 void main() {
   runApp(const MyApp());
@@ -29,18 +36,54 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  String _summary = 'Tap the button to load a Wikipedia summary.';
+  bool _isLoading = false;
+  String? _errorMessage;
 
-  void _incrementCounter() {
+  Future<void> _fetchWikipediaSummary() async {
     setState(() {
-      _counter++;
+      _isLoading = true;
+      _errorMessage = null;
     });
-  }
 
-  void _decrementCounter() {
-    setState(() {
-      _counter--;
-    });
+    try {
+      final response = await http.get(_wikipediaSummaryUrl);
+
+      if (!mounted) {
+        return;
+      }
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        final summaryText = body['extract'] as String?;
+
+        setState(() {
+          _summary = (summaryText != null && summaryText.isNotEmpty)
+              ? summaryText
+              : 'Wikipedia responded, but no summary text was found.';
+        });
+      } else {
+        setState(() {
+          _errorMessage =
+              'Request failed with status code ${response.statusCode}.';
+        });
+      }
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _errorMessage =
+            'Could not reach Wikipedia. Check your internet connection and try again.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -50,39 +93,34 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Stack(
-        children: [
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('You have pushed the button this many times:'),
-                Text(
-                  '$_counter',
-                  style: Theme.of(context).textTheme.headlineMedium,
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: _isLoading ? null : _fetchWikipediaSummary,
+                child: Text(
+                  _isLoading ? 'Loading Wikipedia...' : 'Get Wikipedia Summary',
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 24),
+              if (_errorMessage != null)
+                Text(
+                  _errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              const SizedBox(height: 12),
+              Text(
+                _summary,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ],
           ),
-          Positioned(
-            left: 16,
-            bottom: 16,
-            child: FloatingActionButton(
-              onPressed: _decrementCounter,
-              tooltip: 'Decrement',
-              child: const Icon(Icons.remove),
-            ),
-          ),
-          Positioned(
-            right: 16,
-            bottom: 16,
-            child: FloatingActionButton(
-              onPressed: _incrementCounter,
-              tooltip: 'Increment',
-              child: const Icon(Icons.add),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
