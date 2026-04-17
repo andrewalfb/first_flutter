@@ -21,22 +21,162 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const HomeScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          title: const Text('Flutter Demo'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Calculator', icon: Icon(Icons.calculate)),
+              Tab(text: 'Wikipedia', icon: Icon(Icons.public)),
+            ],
+          ),
+        ),
+        body: const TabBarView(
+          children: [CalculatorScreen(), WikipediaScreen()],
+        ),
+      ),
+    );
+  }
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  String _summary = 'Tap the button to load a Wikipedia summary.';
+class CalculatorScreen extends StatefulWidget {
+  const CalculatorScreen({super.key});
+
+  @override
+  State<CalculatorScreen> createState() => _CalculatorScreenState();
+}
+
+class _CalculatorScreenState extends State<CalculatorScreen> {
+  final TextEditingController _firstNumberController = TextEditingController();
+  final TextEditingController _secondNumberController = TextEditingController();
+  String _result = 'Enter two numbers to calculate.';
+
+  @override
+  void dispose() {
+    _firstNumberController.dispose();
+    _secondNumberController.dispose();
+    super.dispose();
+  }
+
+  void _calculate(String operator) {
+    final firstValue = double.tryParse(_firstNumberController.text);
+    final secondValue = double.tryParse(_secondNumberController.text);
+
+    if (firstValue == null || secondValue == null) {
+      setState(() {
+        _result = 'Please enter valid numbers.';
+      });
+      return;
+    }
+
+    if (operator == '÷' && secondValue == 0) {
+      setState(() {
+        _result = 'Cannot divide by zero.';
+      });
+      return;
+    }
+
+    late final double calculation;
+
+    switch (operator) {
+      case '+':
+        calculation = firstValue + secondValue;
+      case '-':
+        calculation = firstValue - secondValue;
+      case '×':
+        calculation = firstValue * secondValue;
+      case '÷':
+        calculation = firstValue / secondValue;
+      default:
+        calculation = 0;
+    }
+
+    setState(() {
+      _result = 'Result: ${calculation.toStringAsFixed(2)}';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          TextField(
+            controller: _firstNumberController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'First number',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _secondNumberController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Second number',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            alignment: WrapAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () => _calculate('+'),
+                child: const Text('Add'),
+              ),
+              ElevatedButton(
+                onPressed: () => _calculate('-'),
+                child: const Text('Subtract'),
+              ),
+              ElevatedButton(
+                onPressed: () => _calculate('×'),
+                child: const Text('Multiply'),
+              ),
+              ElevatedButton(
+                onPressed: () => _calculate('÷'),
+                child: const Text('Divide'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Text(
+            _result,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class WikipediaScreen extends StatefulWidget {
+  const WikipediaScreen({super.key});
+
+  @override
+  State<WikipediaScreen> createState() => _WikipediaScreenState();
+}
+
+class _WikipediaScreenState extends State<WikipediaScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -56,12 +196,22 @@ class _MyHomePageState extends State<MyHomePage> {
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         final summaryText = body['extract'] as String?;
+        final pageTitle = body['title'] as String? ?? 'Wikipedia Result';
 
-        setState(() {
-          _summary = (summaryText != null && summaryText.isNotEmpty)
-              ? summaryText
-              : 'Wikipedia responded, but no summary text was found.';
-        });
+        if (summaryText == null || summaryText.isEmpty) {
+          setState(() {
+            _errorMessage =
+                'Wikipedia responded, but no summary text was found.';
+          });
+          return;
+        }
+
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (context) =>
+                WikipediaResultScreen(title: pageTitle, summary: summaryText),
+          ),
+        );
       } else {
         setState(() {
           _errorMessage =
@@ -88,38 +238,71 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: _isLoading ? null : _fetchWikipediaSummary,
-                child: Text(
-                  _isLoading ? 'Loading Wikipedia...' : 'Get Wikipedia Summary',
-                ),
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Open a Wikipedia page summary about Flutter software.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _fetchWikipediaSummary,
+              child: Text(
+                _isLoading ? 'Loading Wikipedia...' : 'Open Wikipedia Result',
               ),
+            ),
+            if (_errorMessage != null) ...[
               const SizedBox(height: 24),
-              if (_errorMessage != null)
-                Text(
-                  _errorMessage!,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              const SizedBox(height: 12),
               Text(
-                _summary,
+                _errorMessage!,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ],
-          ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class WikipediaResultScreen extends StatelessWidget {
+  const WikipediaResultScreen({
+    super.key,
+    required this.title,
+    required this.summary,
+  });
+
+  final String title;
+  final String summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Text(
+                  summary,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('Back'),
+            ),
+          ],
         ),
       ),
     );
