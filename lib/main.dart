@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'game.dart';
+
 final _wikipediaSummaryUrl = Uri.parse(
   'https://en.wikipedia.org/api/rest_v1/page/summary/Flutter_(software)',
 );
@@ -32,7 +34,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -41,11 +43,13 @@ class HomeScreen extends StatelessWidget {
             tabs: [
               Tab(text: 'Calculator', icon: Icon(Icons.calculate)),
               Tab(text: 'Wikipedia', icon: Icon(Icons.public)),
+              Tab(text: 'Coming Soon', icon: Icon(Icons.upcoming)),
+              Tab(text: 'Wordle', icon: Icon(Icons.gamepad)),
             ],
           ),
         ),
         body: const TabBarView(
-          children: [CalculatorScreen(), WikipediaScreen()],
+          children: [CalculatorScreen(), WikipediaScreen(), ComingSoonScreen(), Tile("First wiget", .miss)],
         ),
       ),
     );
@@ -303,6 +307,54 @@ class WikipediaResultScreen extends StatelessWidget {
               label: const Text('Back'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class ComingSoonScreen extends StatelessWidget {
+  const ComingSoonScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text(
+        'This screen is coming soon!',
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+}
+
+class Tile extends StatelessWidget {
+  const Tile(this.letter, this.hitType, {super.key});
+
+  final String letter;
+  final HitType hitType;
+
+  @override
+  Widget build(BuildContext context) {
+    // return Container();
+    return Container(
+      width: 50,
+      height: 50,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: switch (hitType) {
+          .hit => Colors.green,
+          .partial => Colors.yellow,
+          .miss => Colors.grey,
+          _ => Colors.white
+        },
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        letter.toUpperCase(),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
