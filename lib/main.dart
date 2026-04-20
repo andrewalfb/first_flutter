@@ -38,18 +38,24 @@ class HomeScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          title: const Text('Flutter Demo'),
+          title: Align(alignment: Alignment.bottomCenter, child: const Text('Flutter Demo'),),
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Calculator', icon: Icon(Icons.calculate)),
               Tab(text: 'Wikipedia', icon: Icon(Icons.public)),
-              Tab(text: 'Coming Soon', icon: Icon(Icons.upcoming)),
+              // Tab(text: 'Coming Soon', icon: Icon(Icons.upcoming)),
+              Tab(text: 'Game', icon: Icon(Icons.grid_on)),
               Tab(text: 'Wordle', icon: Icon(Icons.gamepad)),
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [CalculatorScreen(), WikipediaScreen(), ComingSoonScreen(), Tile("First wiget", .miss)],
+        body: TabBarView(
+          children: [
+            CalculatorScreen(), 
+            WikipediaScreen(), 
+            GamePage() /*ComingSoonScreen()*/, 
+            Tile("First wiget", .miss)
+          ],
         ),
       ),
     );
@@ -313,19 +319,19 @@ class WikipediaResultScreen extends StatelessWidget {
   }
 }
 
-class ComingSoonScreen extends StatelessWidget {
-  const ComingSoonScreen({super.key});
+// class ComingSoonScreen extends StatelessWidget {
+//   const ComingSoonScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'This screen is coming soon!',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return const Center(
+//       child: Text(
+//         'This screen is coming soon!',
+//         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+//       ),
+//     );
+//   }
+// }
 
 class Tile extends StatelessWidget {
   const Tile(this.letter, this.hitType, {super.key});
@@ -335,7 +341,7 @@ class Tile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // return Container();
+    
     return Container(
       width: 50,
       height: 50,
@@ -357,6 +363,81 @@ class Tile extends StatelessWidget {
           fontWeight: FontWeight.bold,
         ),
       ),
+    );
+  }
+}
+
+class GamePage extends StatelessWidget {
+  GamePage({super.key});
+
+  final Game _game = Game();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0), 
+      child: Column(
+        spacing: 5.0, 
+        children: [
+          for (var guess in _game.guesses) 
+            Row(
+              spacing: 5.0,
+              children: [
+                for (var letter in guess) 
+                  Tile(letter.char, letter.type)
+                
+              ],
+            ),
+          GuessInput(
+            onSubmitGuess: (guess) {
+              print(guess);
+            },
+          )
+        ]
+      )
+    );  
+  }
+}
+
+class GuessInput extends StatelessWidget {
+  GuessInput({super.key, required this.onSubmitGuess});
+
+  final void Function(String) onSubmitGuess;
+  final TextEditingController _textEditingController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+
+  void _onSubmit() {
+    onSubmitGuess(_textEditingController.text.trim());
+    _textEditingController.clear();
+    _focusNode.requestFocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              maxLength: 5,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(35)))
+              ),
+              controller: _textEditingController,
+              autofocus: true,
+              onSubmitted: (value) {
+                _onSubmit();
+              },
+            )
+          )
+        ),
+        IconButton(
+          padding: EdgeInsets.zero,
+          onPressed: _onSubmit(), 
+          icon: const Icon(Icons.arrow_circle_up)
+        )
+      ],
     );
   }
 }
