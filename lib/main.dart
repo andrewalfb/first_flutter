@@ -34,7 +34,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -45,7 +45,7 @@ class HomeScreen extends StatelessWidget {
               Tab(text: 'Wikipedia', icon: Icon(Icons.public)),
               // Tab(text: 'Coming Soon', icon: Icon(Icons.upcoming)),
               Tab(text: 'Game', icon: Icon(Icons.grid_on)),
-              Tab(text: 'Wordle', icon: Icon(Icons.gamepad)),
+              // Tab(text: 'Wordle', icon: Icon(Icons.gamepad)),
             ],
           ),
         ),
@@ -54,7 +54,7 @@ class HomeScreen extends StatelessWidget {
             CalculatorScreen(), 
             WikipediaScreen(), 
             GamePage() /*ComingSoonScreen()*/, 
-            Tile("First wiget", .miss)
+            // Tile("First wiget", .miss)
           ],
         ),
       ),
@@ -319,20 +319,6 @@ class WikipediaResultScreen extends StatelessWidget {
   }
 }
 
-// class ComingSoonScreen extends StatelessWidget {
-//   const ComingSoonScreen({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return const Center(
-//       child: Text(
-//         'This screen is coming soon!',
-//         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//       ),
-//     );
-//   }
-// }
-
 class Tile extends StatelessWidget {
   const Tile(this.letter, this.hitType, {super.key});
 
@@ -343,8 +329,8 @@ class Tile extends StatelessWidget {
   Widget build(BuildContext context) {
     
     return Container(
-      width: 50,
-      height: 50,
+      width: 60,
+      height: 60,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: switch (hitType) {
@@ -354,22 +340,26 @@ class Tile extends StatelessWidget {
           _ => Colors.white
         },
         borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Colors.grey.shade300)
       ),
-      child: Text(
-        letter.toUpperCase(),
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
+      child: Center(
+        child: Text(
+          letter.toUpperCase(),
+          style: Theme.of(context).textTheme.titleLarge,
         ),
       ),
     );
   }
 }
 
-class GamePage extends StatelessWidget {
+class GamePage extends StatefulWidget {
   GamePage({super.key});
 
+  @override
+  State<GamePage> createState() => _GamePageState();
+}
+
+class _GamePageState extends State<GamePage> {
   final Game _game = Game();
 
   @override
@@ -381,16 +371,20 @@ class GamePage extends StatelessWidget {
         children: [
           for (var guess in _game.guesses) 
             Row(
-              spacing: 5.0,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 for (var letter in guess) 
-                  Tile(letter.char, letter.type)
-                
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2.5, vertical: 2.5),
+                    child: Tile(letter.char, letter.type)
+            )
               ],
             ),
           GuessInput(
             onSubmitGuess: (guess) {
-              print(guess);
+             setState(() {
+               _game.guess(guess);
+             });
             },
           )
         ]
@@ -434,7 +428,7 @@ class GuessInput extends StatelessWidget {
         ),
         IconButton(
           padding: EdgeInsets.zero,
-          onPressed: _onSubmit(), 
+          onPressed: _onSubmit, 
           icon: const Icon(Icons.arrow_circle_up)
         )
       ],
