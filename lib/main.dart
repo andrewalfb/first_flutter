@@ -28,34 +28,39 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
   Widget build(BuildContext context) {
+    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          title: Align(alignment: Alignment.bottomCenter, child: const Text('Flutter Demo'),),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Calculator', icon: Icon(Icons.calculate)),
-              Tab(text: 'Wikipedia', icon: Icon(Icons.public)),
-              // Tab(text: 'Coming Soon', icon: Icon(Icons.upcoming)),
-              Tab(text: 'Game', icon: Icon(Icons.grid_on)),
-              // Tab(text: 'Wordle', icon: Icon(Icons.gamepad)),
-            ],
-          ),
-        ),
+        appBar: isKeyboardVisible
+            ? null
+            : AppBar(
+                backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+                title: const Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Text('Flutter Demo'),
+                ),
+                bottom: const TabBar(
+                  tabs: [
+                    Tab(text: 'Calculator', icon: Icon(Icons.calculate)),
+                    Tab(text: 'Wikipedia', icon: Icon(Icons.public)),
+                    Tab(text: 'Game', icon: Icon(Icons.grid_on)),
+                  ],
+                ),
+              ),
         body: TabBarView(
-          children: [
-            CalculatorScreen(), 
-            WikipediaScreen(), 
-            GamePage() /*ComingSoonScreen()*/, 
-            // Tile("First wiget", .miss)
-          ],
+          children: [CalculatorScreen(), WikipediaScreen(), GamePage()],
         ),
       ),
     );
@@ -327,7 +332,6 @@ class Tile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),
       curve: Curves.bounceIn,
@@ -339,10 +343,10 @@ class Tile extends StatelessWidget {
           .hit => Colors.green,
           .partial => Colors.yellow,
           .miss => Colors.grey,
-          _ => Colors.white
+          _ => Colors.white,
         },
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.grey.shade300)
+        border: Border.all(color: Colors.grey.shade300),
       ),
       child: Center(
         child: Text(
@@ -355,7 +359,7 @@ class Tile extends StatelessWidget {
 }
 
 class GamePage extends StatefulWidget {
-  GamePage({super.key});
+  const GamePage({super.key});
 
   @override
   State<GamePage> createState() => _GamePageState();
@@ -367,72 +371,104 @@ class _GamePageState extends State<GamePage> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8.0), 
+      padding: const EdgeInsets.all(8.0),
       child: Column(
-        spacing: 5.0, 
+        spacing: 5.0,
         children: [
-          for (var guess in _game.guesses) 
+          for (var guess in _game.guesses)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                for (var letter in guess) 
+                for (var letter in guess)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2.5, vertical: 2.5),
-                    child: Tile(letter.char, letter.type)
-            )
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 2.5,
+                      vertical: 2.5,
+                    ),
+                    child: Tile(letter.char, letter.type),
+                  ),
               ],
             ),
-          GuessInput(
-            onSubmitGuess: (guess) {
-             setState(() {
-               _game.guess(guess);
-             });
-            },
-          )
-        ]
-      )
-    );  
+            SafeArea(child: 
+              GuessInput(
+                onSubmitGuess: (guess) {
+                  setState(() {
+                    _game.guess(guess);
+                  });
+                },
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 
-class GuessInput extends StatelessWidget {
-  GuessInput({super.key, required this.onSubmitGuess});
+class GuessInput extends StatefulWidget {
+  const GuessInput({super.key, required this.onSubmitGuess});
 
   final void Function(String) onSubmitGuess;
-  final TextEditingController _textEditingController = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
+
+  @override
+  State<GuessInput> createState() => _GuessInputState();
+}
+
+class _GuessInputState extends State<GuessInput> {
+  // Controllers live here in State so they aren't destroyed on rebuild
+  late final TextEditingController _textEditingController;
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _textEditingController = TextEditingController();
+    _focusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _textEditingController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   void _onSubmit() {
-    onSubmitGuess(_textEditingController.text.trim());
-    _textEditingController.clear();
-    _focusNode.requestFocus();
+    final text = _textEditingController.text.trim();
+    if (text.isNotEmpty) {
+      widget.onSubmitGuess(text);
+      _textEditingController.clear();
+      _focusNode.requestFocus();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start, // Align to top because of the counter
       children: [
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              maxLength: 5,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(35)))
+          child: TextField(
+            focusNode: _focusNode,
+            controller: _textEditingController,
+            maxLength: 5,
+            autofocus: true,
+            onSubmitted: (_) => _onSubmit(),
+            decoration: InputDecoration(
+              labelText: 'Enter your guess',
+              suffixIcon: Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: IconButton(
+                  onPressed: _onSubmit,
+                  icon: const Icon(Icons.arrow_circle_up, size: 32),
+                  color: Colors.deepPurple,
+                ),
               ),
-              controller: _textEditingController,
-              autofocus: true,
-              onSubmitted: (value) {
-                _onSubmit();
-              },
-            )
-          )
+              border: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(35)),
+              ),
+            ),
+          ),
         ),
-        IconButton(
-          padding: EdgeInsets.zero,
-          onPressed: _onSubmit, 
-          icon: const Icon(Icons.arrow_circle_up)
-        )
       ],
     );
   }
