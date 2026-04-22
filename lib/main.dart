@@ -43,22 +43,21 @@ class _HomeScreenState extends State<HomeScreen> {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        appBar: isKeyboardVisible
-            ? null
-            : AppBar(
-                backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-                title: const Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Text('Flutter Demo'),
-                ),
-                bottom: const TabBar(
-                  tabs: [
-                    Tab(text: 'Calculator', icon: Icon(Icons.calculate)),
-                    Tab(text: 'Wikipedia', icon: Icon(Icons.public)),
-                    Tab(text: 'Game', icon: Icon(Icons.grid_on)),
-                  ],
-                ),
-              ),
+        appBar: AppBar(
+            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+            title: isKeyboardVisible ? null : const Align(
+              alignment: Alignment.bottomCenter,
+              child: Text('Flutter Demo'),
+            ),
+            toolbarHeight: isKeyboardVisible ? 0 : kToolbarHeight,
+            bottom: const TabBar(
+              tabs: [
+                Tab(text: 'Calculator', icon: Icon(Icons.calculate)),
+                Tab(text: 'Wikipedia', icon: Icon(Icons.public)),
+                Tab(text: 'Game', icon: Icon(Icons.grid_on)),
+              ],
+            ),
+        ),
         body: TabBarView(
           children: [CalculatorScreen(), WikipediaScreen(), GamePage()],
         ),
@@ -367,41 +366,108 @@ class GamePage extends StatefulWidget {
 
 class _GamePageState extends State<GamePage> {
   final Game _game = Game();
-
+/* work variant with scroolview, but it is not good because of keyboard
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        spacing: 5.0,
-        children: [
-          for (var guess in _game.guesses)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return  Column(
+         children: [
+          Expanded(
+            child: SingleChildScrollView(
+                reverse: true,
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  spacing: 5.0,
+                  children: [
+                    for (var guess in _game.guesses)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          for (var letter in guess)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 2.5,
+                                vertical: 2.5,
+                              ),
+                              child: Tile(letter.char, letter.type),
+                            ),
+                        ],
+                      ),
+                      SafeArea(child: 
+                        GuessInput(
+                          onSubmitGuess: (guess) {
+                            setState(() {
+                              _game.guess(guess);
+                            });
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+            ),
+          ),
+        ],
+      );
+  }
+*/
+@override
+Widget build(BuildContext context) {
+  // Define your constants once to keep them in sync
+  const double tileWidth = 60.0; 
+  const double tilePadding = 2.5;
+  const int lettersPerWord = 5;
+  
+  // Total width = (Tile + Padding on both sides) * Number of letters
+  const double gameBoardWidth = (tileWidth + (tilePadding * 2)) * lettersPerWord;
+
+  return Column(
+    children: [
+      // 1. Game Board Section (Centered)
+      Expanded(
+        child: Center(
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: Column(
               children: [
-                for (var letter in guess)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 2.5,
-                      vertical: 2.5,
-                    ),
-                    child: Tile(letter.char, letter.type),
+                for (var guess in _game.guesses)
+                  Row(
+                    children: [
+                      for (var letter in guess)
+                        Padding(
+                          padding: const EdgeInsets.all(tilePadding),
+                          child: SizedBox(
+                            width: tileWidth, 
+                            height: tileWidth, 
+                            child: Tile(letter.char, letter.type)
+                          ),
+                        ),
+                    ],
                   ),
               ],
             ),
-            SafeArea(child: 
-              GuessInput(
+          ),
+        ),
+      ),
+
+      // 2. Input Section (Matched to Game Width)
+      SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Center( // Centers the constrained input field
+            child: SizedBox(
+              width: gameBoardWidth, // Matches the grid width exactly
+              child: GuessInput(
                 onSubmitGuess: (guess) {
-                  setState(() {
-                    _game.guess(guess);
-                  });
+                  setState(() => _game.guess(guess));
                 },
               ),
             ),
-        ],
+          ),
+        ),
       ),
-    );
-  }
+    ],
+  );
+}
 }
 
 class GuessInput extends StatefulWidget {
