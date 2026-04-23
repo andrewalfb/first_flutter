@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import 'game_layout.dart';
 
 class GuessInputSection extends StatelessWidget {
-  const GuessInputSection({
-    super.key,
-    required this.onSubmitGuess,
-  });
+  const GuessInputSection({super.key, required this.onSubmitGuess});
 
   final void Function(String) onSubmitGuess;
 

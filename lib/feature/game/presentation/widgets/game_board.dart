@@ -5,10 +5,7 @@ import '../tile.dart';
 import 'game_layout.dart';
 
 class GameBoard extends StatelessWidget {
-  const GameBoard({
-    super.key,
-    required this.guesses,
-  });
+  const GameBoard({super.key, required this.guesses});
 
   final List<Word> guesses;
 
@@ -18,9 +15,7 @@ class GameBoard extends StatelessWidget {
       child: FittedBox(
         fit: BoxFit.contain,
         child: Column(
-          children: guesses
-              .map((guess) => GameBoardRow(guess: guess))
-              .toList(),
+          children: guesses.map((guess) => GameBoardRow(guess: guess)).toList(),
         ),
       ),
     );
@@ -28,10 +23,7 @@ class GameBoard extends StatelessWidget {
 }
 
 class GameBoardRow extends StatelessWidget {
-  const GameBoardRow({
-    super.key,
-    required this.guess,
-  });
+  const GameBoardRow({super.key, required this.guess});
 
   final Word guess;
 
